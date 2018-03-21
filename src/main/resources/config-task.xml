@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+    <bean id="dataSourceQuartz" class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+          destroy-method="close">
+        <property name="driverClassName" value="${org.quartz.jobStore.jdbc.driver}"/>
+        <property name="url" value="${org.quartz.jobStore.jdbc.url}"/>
+        <property name="username" value="${org.quartz.jobStore.jdbc.userName}"/>
+        <property name="password" value="${org.quartz.jobStore.jdbc.passWord}"/>
+        <!-- 连接池最大使用连接数量 -->
+        <property name="maxActive" value="${jdbc.pool.maxActive}"/>
+        <!-- 初始化大小 -->
+        <property name="initialSize" value="1"/>
+        <!-- 获取连接最大等待时间 -->
+        <property name="maxWait" value="60000"/>
+        <!-- 连接池最小空闲 -->
+        <property name="minIdle" value="${jdbc.pool.maxIdle}"/>
+        <!-- 逐出连接的检测时间间隔 -->
+        <property name="timeBetweenEvictionRunsMillis" value="3000"/>
+        <!-- 最小逐出时间 -->
+        <property name="minEvictableIdleTimeMillis" value="300000"/>
+        <!-- 测试有效用的SQL Query -->
+        <property name="validationQuery" value="SELECT 'x'"/>
+        <!-- 连接空闲时测试是否有效 -->
+        <property name="testWhileIdle" value="true"/>
+        <!-- 获取连接时测试是否有效 -->
+        <property name="testOnBorrow" value="false"/>
+        <!-- 归还连接时是否测试有效 -->
+        <property name="testOnReturn" value="false"/>
+    </bean>
+
+    <bean id="task1" class="com.fly.task.Task1"/>
+
+    <bean id="task1proxy"
+          class="org.springframework.scheduling.quartz.JobDetailFactoryBean" >
+
+        <property name="Durability" value="true"/>
+        <property name="requestsRecovery" value="true" />
+        <property name="jobClass" value="com.fly.proxy.MyDetailQuartzJobBean"/>
+        <property name="jobDataAsMap">
+            <map>
+                <!-- 实际的任务的Bean name，填上EventMonitorService的Bean name -->
+                <entry key="targetObject" value="task1"/>
+                <entry key="targetMethod" value="doSchedule"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="task1Trigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail" ref="task1proxy"/>
+        <property name="cronExpression" value="0/2 * * * * ?"/>
+    </bean>
+
+    <!--job entry-->
+    <bean
+          class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <property name="dataSource">
+            <ref bean="dataSourceQuartz"/>
+        </property>
+        <property name="configLocation" value="config-quartz.properties"/>
+        <property name="applicationContextSchedulerContextKey" value="applicationContext"/>
+        <property name="schedulerName" value="module1" />
+        <!-- 设置自动启动 -->
+        <property name="autoStartup" value="true"/>
+        <!--可选，QuartzScheduler 启动时更新己存在的Job，这样就不用每次修改targetObject后删除qrtz_job_details表对应记录了 -->
+        <property name="overwriteExistingJobs" value="true"/>
+        <!--必须的，QuartzScheduler 延时启动，应用启动完后 QuartzScheduler 再启动 -->
+        <property name="startupDelay" value="10"/>
+
+        <!-- 任务列表，可以配置多个任务加入到该List -->
+        <property name="triggers">
+            <list>
+                <ref bean="task1Trigger"/>
+            </list>
+        </property>
+    </bean>
+</beans>

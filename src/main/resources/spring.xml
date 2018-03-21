@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd"
+       default-lazy-init="false">
+    <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <!--如果出现unkow jdbc driver : ${jdbc.url},可以把第一种写法换成第二种写法>
+        <!-∑<property name="locations" value="classpath:application.properties,classpath:jdbc.properties"/>-->
+        <property name="locations">
+            <list>
+                <value>classpath*:*.properties</value>
+                <!--login的配置-->
+            </list>
+        </property>
+        <property name="ignoreUnresolvablePlaceholders" value="true"/>
+    </bean>
+    <import resource="config-task.xml"/>
+
+</beans>
